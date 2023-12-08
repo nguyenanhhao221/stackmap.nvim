@@ -43,6 +43,7 @@ M.pop = function(name)
       --Handle mapping that existed
       local exist_mapping = state.existing[lhs]
       -- set existing keymaps back to the original key map
+      --TODO: handle additional options from the og mapping
       vim.keymap.set(state.mode, exist_mapping.lhs, exist_mapping.rhs)
     else
       --Handle mapping that not existed
