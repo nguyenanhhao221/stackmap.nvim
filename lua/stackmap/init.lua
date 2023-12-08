@@ -15,34 +15,44 @@ end
 ---
 ---@param name string
 ---@param mode string
----@param mapping table<string,string>
-M.push = function(name, mode, mapping)
+---@param mappings table<string,string>
+M.push = function(name, mode, mappings)
   local maps = vim.api.nvim_get_keymap(mode)
   local existing_maps = {}
 
-  for lhs, rhs in pairs(mapping) do
+  for lhs, _ in pairs(mappings) do
     local existing = (find_mapping(maps, lhs))
     if existing then
-      table.insert(existing_maps, existing)
+      existing_maps[lhs] = existing
     end
   end
 
-  M._stack[name] = existing_maps
-  for lhs, rhs in pairs(mapping) do
+  M._stack[name] = { mode = mode, existing = existing_maps, mappings = mappings }
+
+  for lhs, rhs in pairs(mappings) do
     -- TODO: need some way to pass options in here
     vim.keymap.set(mode, lhs, rhs)
   end
 end
 
-M.pop = function(name) end
+M.pop = function(name)
+  local state = M._stack[name]
+  M._stack[name] = nil
 
--- lua require("mapstack").push("debug_mode", {...})
-
--- lua require("mapstack").pop("debug_mode")
+  for lhs, _ in pairs(state.mappings) do
+    if state.existing[lhs] then
+      --Handle mapping that existed
+    else
+      --Handle mapping that not existed
+      -- P(lhs)
+      vim.keymap.del(state.mode, lhs)
+    end
+  end
+end
 
 M.push("debug_mode", "n", {
-  [" st"] = "echo 'Hello'",
-  [" sp"] = "echo 'Goodbye'",
+  [",st"] = "echo 'Hello'",
+  [",sp"] = "echo 'Goodbye'",
 })
 
 return M
