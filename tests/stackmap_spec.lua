@@ -1,4 +1,5 @@
-local find_map = function(maps, lhs)
+local find_map = function(lhs)
+  local maps = vim.api.nvim_get_keymap("n")
   for _, map in ipairs(maps) do
     if map.lhs == lhs then
       return map
@@ -7,6 +8,12 @@ local find_map = function(maps, lhs)
 end
 
 describe("stackmap", function()
+  before_each(function()
+    -- Don't have this mapping before we start to test
+    pcall(vim.keymap.del, "n", "asdashd")
+    require("stackmap")._stack = {}
+  end)
+
   it("can be require", function()
     require("stackmap")
   end)
@@ -17,8 +24,7 @@ describe("stackmap", function()
       asdashd = expectRhs,
     })
 
-    local maps = vim.api.nvim_get_keymap("n")
-    local found = find_map(maps, "asdashd")
+    local found = find_map("asdashd")
     assert.are.same(expectRhs, found.rhs)
   end)
 
@@ -30,10 +36,24 @@ describe("stackmap", function()
       ["asdashd_2"] = expectRhs .. "2",
     })
 
-    local maps = vim.api.nvim_get_keymap("n")
-    local found1 = find_map(maps, "asdashd_1")
+    local found1 = find_map("asdashd_1")
     assert.are.same(expectRhs .. "1", found1.rhs)
-    local found2 = find_map(maps, "asdashd_2")
+    local found2 = find_map("asdashd_2")
     assert.are.same(expectRhs .. "2", found2.rhs)
+  end)
+
+  it("can delete mapping after pop", function()
+    local expectRhs = "echo 'this is a test'"
+    require("stackmap").push("test_pop", "n", {
+      abc = expectRhs,
+    })
+
+    local found = find_map("abc")
+    assert.are.same(expectRhs, found.rhs)
+
+    require("stackmap").pop("test_pop")
+
+    local after_pop = find_map("abc")
+    assert.are.same(nil, after_pop)
   end)
 end)
