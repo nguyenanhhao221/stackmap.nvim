@@ -56,4 +56,23 @@ describe("stackmap", function()
     local after_pop = find_map("abc")
     assert.are.same(nil, after_pop)
   end)
+
+  it("can delete existing mapping after pop", function()
+    -- Set an key map so we can have an existing one
+    local stackmap = require("stackmap")
+    vim.keymap.set("n", "asdasd", "echo: 'OG MAPPING'")
+    local expectRhs = "echo 'this is a test'"
+
+    stackmap.push("test_pop_2", "n", {
+      asdasd = expectRhs,
+    })
+
+    local found = find_map("asdasd")
+    assert.are.same(expectRhs, found.rhs)
+
+    stackmap.pop("test_pop_2")
+
+    local after_pop = find_map("asdasd")
+    assert.are.same("echo: 'OG MAPPING'", after_pop.rhs)
+  end)
 end)
